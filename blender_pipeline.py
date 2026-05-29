@@ -89,6 +89,8 @@ center_xy = Vector(((min_corner.x + max_corner.x) / 2.0, (min_corner.y + max_cor
 translation = Matrix.Translation((-center_xy.x, -center_xy.y, -min_corner.z))
 rotate_objects(mesh_objects, translation)
 
+rotate_objects(mesh_objects, Matrix.Rotation(3.14159265359, 4, "Z"))
+
 bpy.context.view_layer.update()
 
 bounds = current_bounds(mesh_objects)
@@ -104,7 +106,7 @@ camera_data = bpy.data.cameras.new("ThumbnailCamera")
 camera = bpy.data.objects.new("ThumbnailCamera", camera_data)
 camera.location = center + Vector((size * 1.0, -size * 1.0, size * 0.8))
 camera.data.type = "ORTHO"
-camera.data.ortho_scale = max(extents.x, extents.y) * 1.18
+camera.data.ortho_scale = max(extents.x, extents.y) * 1.35
 camera.data.clip_start = 0.01
 camera.data.clip_end = size * 20.0
 scene.collection.objects.link(camera)
