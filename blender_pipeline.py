@@ -22,6 +22,7 @@ from pathlib import Path
 
 import bpy
 from mathutils import Vector
+from mathutils import Matrix
 
 mesh_path = Path(${mesh_path})
 image_path = Path(${image_path})
@@ -58,6 +59,23 @@ max_z = max(vector.z for vector in bounds)
 
 center = Vector(((min_x + max_x) / 2.0, (min_y + max_y) / 2.0, (min_z + max_z) / 2.0))
 size = max(max_x - min_x, max_y - min_y, max_z - min_z, 1.0)
+ground_offset = -min_z
+
+for obj in mesh_objects:
+    obj.matrix_world = Matrix.Translation((0.0, 0.0, ground_offset)) @ obj.matrix_world
+
+bpy.context.view_layer.update()
+
+bounds = [obj.matrix_world @ Vector(corner) for obj in mesh_objects for corner in obj.bound_box]
+min_x = min(vector.x for vector in bounds)
+min_y = min(vector.y for vector in bounds)
+min_z = min(vector.z for vector in bounds)
+max_x = max(vector.x for vector in bounds)
+max_y = max(vector.y for vector in bounds)
+max_z = max(vector.z for vector in bounds)
+
+center = Vector(((min_x + max_x) / 2.0, (min_y + max_y) / 2.0, (min_z + max_z) / 2.0))
+size = max(max_x - min_x, max_y - min_y, max_z - min_z, 1.0)
 
 target = bpy.data.objects.new("ThumbnailTarget", None)
 target.location = center
@@ -65,9 +83,9 @@ scene.collection.objects.link(target)
 
 camera_data = bpy.data.cameras.new("ThumbnailCamera")
 camera = bpy.data.objects.new("ThumbnailCamera", camera_data)
-camera.location = center + Vector((size * 2.0, -size * 2.0, size * 1.5))
+camera.location = center + Vector((size * 1.2, -size * 1.2, size * 0.9))
 camera.data.type = "ORTHO"
-camera.data.ortho_scale = size * 2.2
+camera.data.ortho_scale = size * 1.45
 camera.data.clip_start = 0.01
 camera.data.clip_end = size * 20.0
 scene.collection.objects.link(camera)
@@ -87,8 +105,8 @@ scene.collection.objects.link(sun)
 world = bpy.data.worlds.new("ThumbnailWorld")
 world.use_nodes = True
 background = world.node_tree.nodes["Background"]
-background.inputs[0].default_value = (1.0, 1.0, 1.0, 1.0)
-background.inputs[1].default_value = 0.85
+background.inputs[0].default_value = (1.0, 1.0, 1.0, 0.0)
+background.inputs[1].default_value = 0.0
 scene.world = world
 
 scene.render.engine = "BLENDER_EEVEE"
@@ -104,9 +122,30 @@ if hasattr(scene, "eevee"):
 scene.render.resolution_x = 512
 scene.render.resolution_y = 512
 scene.render.resolution_percentage = 100
-scene.render.film_transparent = False
+scene.render.film_transparent = True
 scene.render.image_settings.file_format = "PNG"
 scene.render.filepath = str(image_path)
+
+for obj in mesh_objects:
+    if not obj.data.materials:
+        material = bpy.data.materials.new(name=f"{obj.name}_Material")
+        material.use_nodes = True
+        principled = material.node_tree.nodes.get("Principled BSDF")
+        if principled is not None:
+            principled.inputs["Base Color"].default_value = (0.16, 0.16, 0.18, 1.0)
+            principled.inputs["Roughness"].default_value = 0.65
+        obj.data.materials.append(material)
+        continue
+
+    for material in obj.data.materials:
+        if material is None:
+            continue
+        material.use_nodes = True
+        principled = material.node_tree.nodes.get("Principled BSDF")
+        if principled is None:
+            continue
+        principled.inputs["Base Color"].default_value = (0.16, 0.16, 0.18, 1.0)
+        principled.inputs["Roughness"].default_value = 0.65
 
 bpy.ops.render.render(write_still=True)
 """
