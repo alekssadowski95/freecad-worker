@@ -49,33 +49,52 @@ mesh_objects = [obj for obj in scene.objects if obj.type == "MESH"]
 if not mesh_objects:
     raise RuntimeError("Blender did not import any mesh objects")
 
-bounds = [obj.matrix_world @ Vector(corner) for obj in mesh_objects for corner in obj.bound_box]
-min_x = min(vector.x for vector in bounds)
-min_y = min(vector.y for vector in bounds)
-min_z = min(vector.z for vector in bounds)
-max_x = max(vector.x for vector in bounds)
-max_y = max(vector.y for vector in bounds)
-max_z = max(vector.z for vector in bounds)
+def current_bounds(objects):
+    return [obj.matrix_world @ Vector(corner) for obj in objects for corner in obj.bound_box]
 
-center = Vector(((min_x + max_x) / 2.0, (min_y + max_y) / 2.0, (min_z + max_z) / 2.0))
-size = max(max_x - min_x, max_y - min_y, max_z - min_z, 1.0)
-ground_offset = -min_z
 
-for obj in mesh_objects:
-    obj.matrix_world = Matrix.Translation((0.0, 0.0, ground_offset)) @ obj.matrix_world
+def bounds_extents(bounds):
+    min_x = min(vector.x for vector in bounds)
+    min_y = min(vector.y for vector in bounds)
+    min_z = min(vector.z for vector in bounds)
+    max_x = max(vector.x for vector in bounds)
+    max_y = max(vector.y for vector in bounds)
+    max_z = max(vector.z for vector in bounds)
+    return (
+        Vector((min_x, min_y, min_z)),
+        Vector((max_x, max_y, max_z)),
+        Vector((max_x - min_x, max_y - min_y, max_z - min_z)),
+    )
+
+
+def rotate_objects(objects, rotation_matrix):
+    for obj in objects:
+        obj.matrix_world = rotation_matrix @ obj.matrix_world
+
+
+bounds = current_bounds(mesh_objects)
+min_corner, max_corner, extents = bounds_extents(bounds)
+
+if extents.x <= extents.y and extents.x <= extents.z:
+    rotate_objects(mesh_objects, Matrix.Rotation(1.57079632679, 4, "Y"))
+elif extents.y <= extents.x and extents.y <= extents.z:
+    rotate_objects(mesh_objects, Matrix.Rotation(1.57079632679, 4, "X"))
 
 bpy.context.view_layer.update()
 
-bounds = [obj.matrix_world @ Vector(corner) for obj in mesh_objects for corner in obj.bound_box]
-min_x = min(vector.x for vector in bounds)
-min_y = min(vector.y for vector in bounds)
-min_z = min(vector.z for vector in bounds)
-max_x = max(vector.x for vector in bounds)
-max_y = max(vector.y for vector in bounds)
-max_z = max(vector.z for vector in bounds)
+bounds = current_bounds(mesh_objects)
+min_corner, max_corner, extents = bounds_extents(bounds)
 
-center = Vector(((min_x + max_x) / 2.0, (min_y + max_y) / 2.0, (min_z + max_z) / 2.0))
-size = max(max_x - min_x, max_y - min_y, max_z - min_z, 1.0)
+center_xy = Vector(((min_corner.x + max_corner.x) / 2.0, (min_corner.y + max_corner.y) / 2.0, 0.0))
+translation = Matrix.Translation((-center_xy.x, -center_xy.y, -min_corner.z))
+rotate_objects(mesh_objects, translation)
+
+bpy.context.view_layer.update()
+
+bounds = current_bounds(mesh_objects)
+min_corner, max_corner, extents = bounds_extents(bounds)
+center = Vector(((min_corner.x + max_corner.x) / 2.0, (min_corner.y + max_corner.y) / 2.0, (min_corner.z + max_corner.z) / 2.0))
+size = max(extents.x, extents.y, extents.z, 1.0)
 
 target = bpy.data.objects.new("ThumbnailTarget", None)
 target.location = center
@@ -83,9 +102,9 @@ scene.collection.objects.link(target)
 
 camera_data = bpy.data.cameras.new("ThumbnailCamera")
 camera = bpy.data.objects.new("ThumbnailCamera", camera_data)
-camera.location = center + Vector((size * 1.2, -size * 1.2, size * 0.9))
+camera.location = center + Vector((size * 1.0, -size * 1.0, size * 0.8))
 camera.data.type = "ORTHO"
-camera.data.ortho_scale = size * 1.45
+camera.data.ortho_scale = max(extents.x, extents.y) * 1.18
 camera.data.clip_start = 0.01
 camera.data.clip_end = size * 20.0
 scene.collection.objects.link(camera)
