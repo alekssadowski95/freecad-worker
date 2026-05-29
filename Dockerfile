@@ -16,7 +16,7 @@ RUN apt-get update \
        freecad-python3 \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python3 -m venv /opt/venv \
+RUN python3 -m venv --system-site-packages /opt/venv \
     && /opt/venv/bin/pip install --upgrade pip
 
 COPY requirements.txt .
