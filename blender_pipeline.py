@@ -152,8 +152,8 @@ for obj in mesh_objects:
         material.use_nodes = True
         principled = material.node_tree.nodes.get("Principled BSDF")
         if principled is not None:
-            principled.inputs["Base Color"].default_value = (0.16, 0.16, 0.18, 1.0)
-            principled.inputs["Roughness"].default_value = 0.65
+            principled.inputs["Base Color"].default_value = (0.82, 0.82, 0.84, 1.0)
+            principled.inputs["Roughness"].default_value = 0.45
         obj.data.materials.append(material)
         continue
 
@@ -164,8 +164,8 @@ for obj in mesh_objects:
         principled = material.node_tree.nodes.get("Principled BSDF")
         if principled is None:
             continue
-        principled.inputs["Base Color"].default_value = (0.16, 0.16, 0.18, 1.0)
-        principled.inputs["Roughness"].default_value = 0.65
+        principled.inputs["Base Color"].default_value = (0.82, 0.82, 0.84, 1.0)
+        principled.inputs["Roughness"].default_value = 0.45
 
 bpy.ops.render.render(write_still=True)
 """
