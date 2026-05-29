@@ -91,9 +91,16 @@ background.inputs[0].default_value = (1.0, 1.0, 1.0, 1.0)
 background.inputs[1].default_value = 0.85
 scene.world = world
 
-scene.render.engine = "CYCLES"
-scene.cycles.samples = 16
-scene.cycles.device = "CPU"
+scene.render.engine = "BLENDER_EEVEE"
+if hasattr(scene, "eevee"):
+    if hasattr(scene.eevee, "taa_render_samples"):
+        scene.eevee.taa_render_samples = 16
+    if hasattr(scene.eevee, "taa_samples"):
+        scene.eevee.taa_samples = 16
+    if hasattr(scene.eevee, "use_gtao"):
+        scene.eevee.use_gtao = False
+    if hasattr(scene.eevee, "use_bloom"):
+        scene.eevee.use_bloom = False
 scene.render.resolution_x = 512
 scene.render.resolution_y = 512
 scene.render.resolution_percentage = 100
