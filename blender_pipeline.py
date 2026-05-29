@@ -105,7 +105,7 @@ camera_data = bpy.data.cameras.new("ThumbnailCamera")
 camera = bpy.data.objects.new("ThumbnailCamera", camera_data)
 camera.location = center + Vector((size * 1.0, -size * 1.0, size * 0.8))
 camera.data.type = "ORTHO"
-camera.data.ortho_scale = max(extents.x, extents.y) * 1.35
+camera.data.ortho_scale = max(extents.x, extents.y) * 1.7
 camera.data.clip_start = 0.01
 camera.data.clip_end = size * 20.0
 scene.collection.objects.link(camera)
