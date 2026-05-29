@@ -80,16 +80,15 @@ if extents.x <= extents.y and extents.x <= extents.z:
 elif extents.y <= extents.x and extents.y <= extents.z:
     rotate_objects(mesh_objects, Matrix.Rotation(1.57079632679, 4, "X"))
 
+rotate_objects(mesh_objects, Matrix.Rotation(3.14159265359, 4, "X"))
+
 bpy.context.view_layer.update()
 
 bounds = current_bounds(mesh_objects)
 min_corner, max_corner, extents = bounds_extents(bounds)
-
 center_xy = Vector(((min_corner.x + max_corner.x) / 2.0, (min_corner.y + max_corner.y) / 2.0, 0.0))
 translation = Matrix.Translation((-center_xy.x, -center_xy.y, -min_corner.z))
 rotate_objects(mesh_objects, translation)
-
-rotate_objects(mesh_objects, Matrix.Rotation(3.14159265359, 4, "Z"))
 
 bpy.context.view_layer.update()
 
