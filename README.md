@@ -1,6 +1,7 @@
 # freecad-worker
 
 Minimal Flask app that accepts uploaded FreeCAD `.FCStd` files, queues a background Celery job, opens the file in headless FreeCAD, adds an object named `loaded`, saves the modified document, and exposes every generated file on a download page.
+The pipeline also exports a mesh and uses Blender headlessly to render a PNG thumbnail.
 
 ## Routes
 
@@ -8,6 +9,7 @@ Minimal Flask app that accepts uploaded FreeCAD `.FCStd` files, queues a backgro
 - `POST /upload` saves the file and queues the FreeCAD job.
 - `GET /files` lists all jobs and downloadable files.
 - `GET /files/<job_id>/<filename>` downloads a specific file.
+- `GET /preview/<job_id>/<filename>` shows image previews inline.
 
 ## Run with Docker
 
@@ -30,6 +32,8 @@ Each upload gets its own folder under `data/jobs/<job_id>/` with:
 - `source.FCStd`
 - `loaded.FCStd`
 - `modified.FCStd`
+- `thumbnail.obj`
+- `thumbnail.png`
 - `job.json`
 
 The download page shows the non-metadata files in a list once they are available.

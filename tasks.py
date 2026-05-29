@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from celery_app import celery_app
-from freecad_pipeline import add_loaded_object, load_document
+from blender_pipeline import render_thumbnail
+from freecad_pipeline import add_loaded_object, export_mesh_for_thumbnail, load_document
 from job_store import DATA_DIR, update_metadata
 
 
@@ -11,6 +12,8 @@ def process_job(job_id: str) -> dict[str, str]:
     source_file = job_path / "source.FCStd"
     loaded_file = job_path / "loaded.FCStd"
     modified_file = job_path / "modified.FCStd"
+    thumbnail_mesh = job_path / "thumbnail.obj"
+    thumbnail_image = job_path / "thumbnail.png"
 
     try:
         update_metadata(job_id, status="processing", stage="loading document", error=None)
@@ -19,14 +22,25 @@ def process_job(job_id: str) -> dict[str, str]:
         update_metadata(job_id, status="processing", stage="adding loaded object", error=None)
         add_loaded_object(loaded_file, modified_file)
 
+        update_metadata(job_id, status="processing", stage="exporting thumbnail mesh", error=None)
+        export_mesh_for_thumbnail(modified_file, thumbnail_mesh)
+
+        update_metadata(job_id, status="processing", stage="rendering thumbnail", error=None)
+        render_thumbnail(thumbnail_mesh, thumbnail_image)
+
         update_metadata(
             job_id,
             status="completed",
             stage="finished",
             error=None,
             result_file=modified_file.name,
+            thumbnail_file=thumbnail_image.name,
         )
-        return {"job_id": job_id, "result_file": modified_file.name}
+        return {
+            "job_id": job_id,
+            "result_file": modified_file.name,
+            "thumbnail_file": thumbnail_image.name,
+        }
     except Exception as exc:
         update_metadata(job_id, status="failed", stage="failed", error=str(exc))
         raise

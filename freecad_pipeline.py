@@ -91,5 +91,47 @@ try:
     document.saveAs(str(destination))
 finally:
     App.closeDocument(document_name)
+    """
+    _run_freecad_script(script, source_path, destination_path)
+
+
+def export_mesh_for_thumbnail(source_path: Path, destination_path: Path) -> None:
+    script = """
+from pathlib import Path
+
+import FreeCAD as App
+import importOBJ
+
+source = Path({source_path})
+destination = Path({destination_path})
+
+document = App.openDocument(str(source))
+if document is None:
+    raise RuntimeError("FreeCAD could not open " + str(source))
+
+document_name = document.Name
+try:
+    document.recompute()
+    export_list = []
+    for obj in document.Objects:
+        try:
+            shape = obj.Shape
+        except Exception:
+            continue
+
+        try:
+            if shape.isNull():
+                continue
+        except Exception:
+            continue
+
+        export_list.append(obj)
+
+    if not export_list:
+        raise RuntimeError("No shape-bearing FreeCAD objects found for export")
+
+    importOBJ.export(export_list, str(destination))
+finally:
+    App.closeDocument(document_name)
 """
     _run_freecad_script(script, source_path, destination_path)

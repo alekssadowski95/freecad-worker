@@ -219,6 +219,15 @@ FILES_TEMPLATE = """
                 {% for filename in job.files %}
                   <li>
                     <a href="{{ url_for('download_file', job_id=job.job_id, filename=filename) }}">{{ filename }}</a>
+                    {% if job.preview_file and filename == job.preview_file %}
+                      <div style="margin-top: 10px;">
+                        <img
+                          src="{{ url_for('preview_file', job_id=job.job_id, filename=filename) }}"
+                          alt="Preview for {{ filename }}"
+                          style="max-width: 180px; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--border); background: #fff;"
+                        >
+                      </div>
+                    {% endif %}
                   </li>
                 {% endfor %}
               </ul>
@@ -273,9 +282,15 @@ def upload_file():
 
 @app.get("/files")
 def files_view():
+    jobs = list_jobs()
+    for job in jobs:
+        job["preview_file"] = next(
+            (filename for filename in job.get("files", []) if filename.lower().endswith(".png")),
+            None,
+        )
     return render_template_string(
         FILES_TEMPLATE,
-        jobs=list_jobs(),
+        jobs=jobs,
         uploaded_job_id=request.args.get("uploaded"),
     )
 
@@ -293,3 +308,18 @@ def download_file(job_id: str, filename: str):
     if filename not in allowed_files:
         abort(404)
     return send_from_directory(directory, filename, as_attachment=True)
+
+
+@app.get("/preview/<job_id>/<path:filename>")
+def preview_file(job_id: str, filename: str):
+    directory = job_dir(job_id)
+    if not directory.exists():
+        abort(404)
+    allowed_files = {
+        file.name
+        for file in directory.iterdir()
+        if file.is_file() and file.name != "job.json"
+    }
+    if filename not in allowed_files:
+        abort(404)
+    return send_from_directory(directory, filename, as_attachment=False)
